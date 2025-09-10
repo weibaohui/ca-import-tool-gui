@@ -1,0 +1,25 @@
+#app {
+    height: 100vh;
+    text-align: center;
+}
+
+#logo {
+    display: block;
+    width: 50%;
+    height: 50%;
+    margin: auto;
+    padding: 10% 0 0;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-origin: content-box;
+}
+
+.result {
+    height: 20px;
+    line-height: 20px;
+    margin: 1.5rem auto;
+    padding: 20px;
+}
+
+/* 移除之前的按钮和输入框样式，因为现在使用 Ant Design 组件 */
