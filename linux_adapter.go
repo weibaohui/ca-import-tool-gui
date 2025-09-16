@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // LinuxCertificateImporter Linux证书导入适配器
@@ -32,20 +33,114 @@ func (l *LinuxCertificateImporter) Import(params ImportParams) ImportResult {
 		return result
 	}
 
-	// 在Linux上使用certutil或cp命令导入证书
-	// 这里使用cp命令将证书复制到系统证书目录
-	cmd := exec.Command("sudo", "cp", params.FilePath, "/usr/local/share/ca-certificates/")
+	// 检测Linux发行版并执行相应的证书导入操作
+	return l.importCertificateByDistribution(params)
+}
 
+// importCertificateByDistribution 根据Linux发行版执行相应的证书导入操作
+func (l *LinuxCertificateImporter) importCertificateByDistribution(params ImportParams) ImportResult {
+	result := ImportResult{
+		Success: false,
+		Message: "",
+		Log:     "",
+	}
+
+	// 检测系统类型并执行相应的导入操作
+	if l.isUpdateCaCertificatesSystem() {
+		return l.importWithUpdateCaCertificates(params)
+	} else if l.isUpdateCaTrustSystem() {
+		return l.importWithUpdateCaTrust(params)
+	} else {
+		result.Message = "不支持的Linux发行版"
+		result.Log = "无法识别系统的证书管理工具"
+		return result
+	}
+}
+
+// isUpdateCaCertificatesSystem 检测是否为使用update-ca-certificates的系统
+// 包括Debian/Ubuntu/Alpine/openSUSE等
+func (l *LinuxCertificateImporter) isUpdateCaCertificatesSystem() bool {
+	// 检查update-ca-certificates命令是否存在
+	_, err := exec.LookPath("update-ca-certificates")
+	return err == nil
+}
+
+// isUpdateCaTrustSystem 检测是否为使用update-ca-trust的系统
+// 包括RHEL/CentOS/Fedora/Arch等
+func (l *LinuxCertificateImporter) isUpdateCaTrustSystem() bool {
+	// 检查update-ca-trust命令是否存在
+	_, err := exec.LookPath("update-ca-trust")
+	return err == nil
+}
+
+// importWithUpdateCaCertificates 使用update-ca-certificates方式导入证书
+func (l *LinuxCertificateImporter) importWithUpdateCaCertificates(params ImportParams) ImportResult {
+	result := ImportResult{
+		Success: false,
+		Message: "",
+		Log:     "",
+	}
+
+	// 获取证书文件名
+	fileName := params.FilePath[strings.LastIndex(params.FilePath, "/")+1:]
+
+	// 复制证书到系统目录
+	cmd := exec.Command("sudo", "cp", params.FilePath, "/usr/local/share/ca-certificates/"+fileName)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		result.Success = false
-		result.Message = "证书导入失败"
+		result.Message = "证书复制失败"
 		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, string(output))
 		return result
 	}
 
 	// 更新证书库
 	updateCmd := exec.Command("sudo", "update-ca-certificates")
+	updateOutput, updateErr := updateCmd.CombinedOutput()
+	if updateErr != nil {
+		result.Success = false
+		result.Message = "证书库更新失败"
+		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", updateErr, string(updateOutput))
+		return result
+	}
+
+	result.Success = true
+	result.Message = "证书导入成功"
+	result.Log = fmt.Sprintf("证书已成功导入并更新证书库，输出: %s", string(updateOutput))
+	return result
+}
+
+// importWithUpdateCaTrust 使用update-ca-trust方式导入证书
+func (l *LinuxCertificateImporter) importWithUpdateCaTrust(params ImportParams) ImportResult {
+	result := ImportResult{
+		Success: false,
+		Message: "",
+		Log:     "",
+	}
+
+	// 获取证书文件名
+	fileName := params.FilePath[strings.LastIndex(params.FilePath, "/")+1:]
+
+	// 复制证书到系统目录 (不同发行版路径可能不同，这里使用最常见的)
+	// 对于RHEL/CentOS/Fedora/Rocky/AlmaLinux
+	cmd := exec.Command("sudo", "cp", params.FilePath, "/etc/pki/ca-trust/source/anchors/"+fileName)
+	output, err := cmd.CombinedOutput()
+
+	// 如果上述路径不存在，尝试Arch Linux的路径
+	if err != nil {
+		cmd = exec.Command("sudo", "cp", params.FilePath, "/etc/ca-certificates/trust-source/anchors/"+fileName)
+		output, err = cmd.CombinedOutput()
+	}
+
+	if err != nil {
+		result.Success = false
+		result.Message = "证书复制失败"
+		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, string(output))
+		return result
+	}
+
+	// 更新证书库
+	updateCmd := exec.Command("sudo", "update-ca-trust")
 	updateOutput, updateErr := updateCmd.CombinedOutput()
 	if updateErr != nil {
 		result.Success = false
