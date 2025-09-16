@@ -8,11 +8,10 @@ import { main } from "../wailsjs/go/models";
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 function App() {
     const [importResult, setImportResult] = useState<main.ImportResult | null>(null);
-    const [activeTab, setActiveTab] = useState("import");
+    const [activeTab, setActiveTab] = useState("system");
 
     const handleImportComplete = (result: main.ImportResult) => {
         setImportResult(result);
@@ -33,6 +32,11 @@ function App() {
                         onChange={setActiveTab}
                         items={[
                             {
+                                key: "system",
+                                label: "系统信息",
+                                children: <SystemInfo />,
+                            },
+                            {
                                 key: "import",
                                 label: "证书导入",
                                 children: (
@@ -48,11 +52,6 @@ function App() {
                                     <div>请先执行证书导入操作</div>
                                 ),
                                 disabled: !importResult,
-                            },
-                            {
-                                key: "system",
-                                label: "系统信息",
-                                children: <SystemInfo />,
                             },
                         ]}
                     />
