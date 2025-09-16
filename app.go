@@ -10,11 +10,14 @@ import (
 // App struct
 type App struct {
 	ctx context.Context
+	certImporter CertificateImporter
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	return &App{
+		certImporter: NewCertificateImporter(),
+	}
 }
 
 // startup is called when the app starts. The context is saved
@@ -30,7 +33,7 @@ func (a *App) Greet(name string) string {
 
 // ImportCertificate 执行证书导入操作
 func (a *App) ImportCertificate(params ImportParams) (ImportResult, error) {
-	result := ImportCertificate(params)
+	result := a.certImporter.Import(params)
 	return result, nil
 }
 
@@ -55,12 +58,12 @@ func (a *App) SelectCertificateFile() (string, error) {
 
 // ValidateCertificate 验证证书文件
 func (a *App) ValidateCertificate(filePath string) (bool, error) {
-	valid, err := ValidateCertificate(filePath)
+	valid, err := a.certImporter.Validate(filePath)
 	return valid, err
 }
 
 // ListCertificates 列出已导入的证书
 func (a *App) ListCertificates() ([]CertificateInfo, error) {
-	certs := ListCertificates()
+	certs := a.certImporter.List()
 	return certs, nil
 }
