@@ -36,6 +36,10 @@ dev:
 .PHONY: build
 build: mac_amd64 mac_arm64  windows_amd64 windows_arm64 linux_amd64 linux_arm64
 
+# 构建 Linux 版本（仅Linux平台）
+.PHONY: build-linux
+build-linux: linux_amd64 linux_arm64
+
 # 构建 macOS 版本
 .PHONY: mac_amd64
 mac_amd64:
@@ -74,6 +78,10 @@ linux_arm64:
 .PHONY: package
 package: package_mac package_windows package_linux
 
+# 打包 Linux 版本（仅Linux平台）
+.PHONY: package-linux
+package-linux: build-linux package_linux
+
 # macOS 打包
 .PHONY: package_mac
 package_mac: mac_amd64 mac_arm64 
@@ -101,6 +109,7 @@ help:
 	@echo "Available targets:"
 	@echo "  all              : Clean, build, and package the app for all platforms and architectures"
 	@echo "  build            : Build the app for all platforms and architectures with version and Git hash"
+	@echo "  build-linux      : Build the app for Linux platforms (AMD64 and ARM64)"
 	@echo "  clean            : Clean the build directory"
 	@echo "  mac_amd64        : Build macOS AMD64 version"
 	@echo "  mac_arm64        : Build macOS ARM64 version"
@@ -109,6 +118,7 @@ help:
 	@echo "  linux_amd64      : Build Linux AMD64 version"
 	@echo "  linux_arm64      : Build Linux ARM64 version"
 	@echo "  package          : Package the built apps into distributable files"
+	@echo "  package-linux    : Build and package Linux apps"
 	@echo "  package_mac      : Package macOS apps"
 	@echo "  package_windows  : Package Windows apps"
 	@echo "  package_linux    : Package Linux apps"
