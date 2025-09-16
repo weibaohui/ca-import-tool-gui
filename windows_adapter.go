@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
-	"strings"
+
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 // WindowsCertificateImporter Windows证书导入适配器
@@ -33,31 +37,43 @@ func (w *WindowsCertificateImporter) Import(params ImportParams) ImportResult {
 		return result
 	}
 
-	// 在Windows上使用certutil命令导入证书
-	// certutil -addstore -f "ROOT" certificate.cer
-	cmd := exec.Command("certutil", "-addstore", "-f", "ROOT", params.FilePath)
+	// 直接使用PowerShell以管理员权限运行certutil命令
+	psCommand := fmt.Sprintf(`
+		Start-Process certutil -ArgumentList '-addstore', '-f', 'ROOT', '%s' -Verb RunAs -Wait
+	`, params.FilePath)
+
+	cmd := exec.Command("powershell", "-Command", psCommand)
 
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// 检查是否是因为权限问题导致的错误
-		errorMsg := string(output)
-		if strings.Contains(errorMsg, "拒绝访问") || strings.Contains(errorMsg, "Access is denied") {
-			result.Success = false
-			result.Message = "证书导入失败，需要管理员权限"
-			result.Log = fmt.Sprintf("权限错误: %v, 输出: %s", err, errorMsg)
-			return result
-		}
 
+	// 处理Windows系统的编码问题
+	decodedOutput, decodeErr := decodeWindowsOutput(output)
+	if decodeErr != nil {
+		decodedOutput = string(output) // 如果解码失败，使用原始输出
+	}
+
+	if err != nil {
 		result.Success = false
 		result.Message = "证书导入失败"
-		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, errorMsg)
+		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, decodedOutput)
 		return result
 	}
 
 	result.Success = true
 	result.Message = "证书导入成功"
-	result.Log = fmt.Sprintf("证书已成功导入到系统证书存储中，输出: %s", string(output))
+	result.Log = fmt.Sprintf("证书已成功导入到系统证书存储中，输出: %s", decodedOutput)
 	return result
+}
+
+// decodeWindowsOutput 处理Windows系统的编码问题
+func decodeWindowsOutput(output []byte) (string, error) {
+	// 尝试使用GBK解码
+	reader := transform.NewReader(bytes.NewReader(output), simplifiedchinese.GBK.NewDecoder())
+	decoded, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	return string(decoded), nil
 }
 
 // Validate 验证证书文件
