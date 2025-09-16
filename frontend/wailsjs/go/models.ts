@@ -48,6 +48,26 @@ export namespace main {
 	        this.log = source["log"];
 	    }
 	}
+	export class SystemInfo {
+	    os: string;
+	    arch: string;
+	    go_version: string;
+	    app_name: string;
+	    app_ver: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SystemInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.os = source["os"];
+	        this.arch = source["arch"];
+	        this.go_version = source["go_version"];
+	        this.app_name = source["app_name"];
+	        this.app_ver = source["app_ver"];
+	    }
+	}
 
 }
 

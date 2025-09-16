@@ -3,13 +3,23 @@ package main
 import (
 	"context"
 	"fmt"
+	"runtime"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+// SystemInfo 系统信息结构体
+type SystemInfo struct {
+	OS        string `json:"os"`
+	Arch      string `json:"arch"`
+	GoVersion string `json:"go_version"`
+	AppName   string `json:"app_name"`
+	AppVer    string `json:"app_ver"`
+}
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx          context.Context
 	certImporter CertificateImporter
 }
 
@@ -39,9 +49,9 @@ func (a *App) ImportCertificate(params ImportParams) (ImportResult, error) {
 
 // SelectCertificateFile 打开文件选择对话框并返回选中的文件路径
 func (a *App) SelectCertificateFile() (string, error) {
-	selectedFile, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+	selectedFile, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
 		Title: "选择证书文件",
-		Filters: []runtime.FileFilter{
+		Filters: []wailsruntime.FileFilter{
 			{
 				DisplayName: "证书文件 (*.pem, *.cer, *.crt, *.der)",
 				Pattern:     "*.pem;*.cer;*.crt;*.der",
@@ -66,4 +76,15 @@ func (a *App) ValidateCertificate(filePath string) (bool, error) {
 func (a *App) ListCertificates() ([]CertificateInfo, error) {
 	certs := a.certImporter.List()
 	return certs, nil
+}
+
+// GetSystemInfo 获取系统信息
+func (a *App) GetSystemInfo() SystemInfo {
+	return SystemInfo{
+		OS:        runtime.GOOS,
+		Arch:      runtime.GOARCH,
+		GoVersion: runtime.Version(),
+		AppName:   "CA证书导入工具",
+		AppVer:    "1.0.0",
+	}
 }
