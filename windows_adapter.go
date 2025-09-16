@@ -37,15 +37,11 @@ func (w *WindowsCertificateImporter) Import(params ImportParams) ImportResult {
 		return result
 	}
 
-	// 直接使用PowerShell以管理员权限运行certutil命令
-	psCommand := fmt.Sprintf(`
-		Start-Process certutil -ArgumentList '-addstore', '-f', 'ROOT', '%s' -Verb RunAs -Wait
-	`, params.FilePath)
-
-	cmd := exec.Command("powershell", "-Command", psCommand)
+	// 在Windows上使用certutil命令导入证书
+	// certutil -addstore -f "ROOT" certificate.cer
+	cmd := exec.Command("certutil", "-addstore", "-f", "ROOT", params.FilePath)
 
 	output, err := cmd.CombinedOutput()
-
 	// 处理Windows系统的编码问题
 	decodedOutput, decodeErr := decodeWindowsOutput(output)
 	if decodeErr != nil {
