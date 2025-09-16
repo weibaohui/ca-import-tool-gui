@@ -54,6 +54,7 @@ export namespace main {
 	    go_version: string;
 	    app_name: string;
 	    app_ver: string;
+	    is_admin: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new SystemInfo(source);
@@ -66,6 +67,7 @@ export namespace main {
 	        this.go_version = source["go_version"];
 	        this.app_name = source["app_name"];
 	        this.app_ver = source["app_ver"];
+	        this.is_admin = source["is_admin"];
 	    }
 	}
 

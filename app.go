@@ -15,6 +15,7 @@ type SystemInfo struct {
 	GoVersion string `json:"go_version"`
 	AppName   string `json:"app_name"`
 	AppVer    string `json:"app_ver"`
+	IsAdmin   bool   `json:"is_admin"` // 添加管理员权限检测字段
 }
 
 // App struct
@@ -80,11 +81,25 @@ func (a *App) ListCertificates() ([]CertificateInfo, error) {
 
 // GetSystemInfo 获取系统信息
 func (a *App) GetSystemInfo() SystemInfo {
-	return SystemInfo{
+	info := SystemInfo{
 		OS:        runtime.GOOS,
 		Arch:      runtime.GOARCH,
 		GoVersion: runtime.Version(),
 		AppName:   "CA证书导入工具",
 		AppVer:    "1.0.0",
+		IsAdmin:   false, // 默认值
 	}
+
+	// 仅在Windows平台检测管理员权限
+	if runtime.GOOS == "windows" {
+		admin, err := isWindowsAdmin()
+		if err == nil {
+			info.IsAdmin = admin
+		}
+	} else {
+		// 非Windows平台默认认为有足够权限
+		info.IsAdmin = true
+	}
+
+	return info
 }
