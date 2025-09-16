@@ -4,6 +4,7 @@ import logo from './assets/images/logo-universal.png';
 import CertificateImporter from "./components/CertificateImporter";
 import ImportResultComponent from "./components/ImportResult";
 import SystemInfo from "./components/SystemInfo";
+import About from "./components/About";
 import { main } from "../wailsjs/go/models";
 
 const { Header, Content, Footer } = Layout;
@@ -52,6 +53,11 @@ function App() {
                                     <div>请先执行证书导入操作</div>
                                 ),
                                 disabled: !importResult,
+                            },
+                            {
+                                key: "about",
+                                label: "关于",
+                                children: <About />,
                             },
                         ]}
                     />
