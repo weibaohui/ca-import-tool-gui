@@ -63,6 +63,8 @@ const About: React.FC = () => {
                 )}
             />
 
+
+
             <Title level={4} style={{ marginTop: "30px" }}>技术信息</Title>
             <Descriptions column={1} bordered>
                 <Descriptions.Item label="开发框架">Wails (Go + React)</Descriptions.Item>
@@ -70,6 +72,15 @@ const About: React.FC = () => {
                 <Descriptions.Item label="后端技术">Go语言</Descriptions.Item>
                 <Descriptions.Item label="构建工具">Vite</Descriptions.Item>
             </Descriptions>
+
+            <Title level={4} style={{ marginTop: "30px" }}>项目主页</Title>
+            <Paragraph>
+                您可以访问我们的项目主页获取最新信息、提交问题或贡献代码：
+                <br />
+                <a href="https://github.com/weibaohui/ca-import-tool-gui" target="_blank" rel="noopener noreferrer">
+                    https://github.com/weibaohui/ca-import-tool-gui
+                </a>
+            </Paragraph>
 
             <Title level={4} style={{ marginTop: "30px" }}>许可证</Title>
             <Paragraph>
