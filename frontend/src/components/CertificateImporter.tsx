@@ -82,13 +82,22 @@ const CertificateImporter: React.FC<CertificateImporterProps> = ({ onImportCompl
         onFinish={handleImport}
         disabled={importing}
       >
-        <Alert
-          message="安全提示"
-          description="在导入过程中，系统可能会弹出输入密码的对话框，请您放心输入系统管理员密码以完成证书导入操作。"
-          type="info"
-          showIcon
-          style={{ marginBottom: 20 }}
-        />
+        {selectedFilePaths.length == 1 && (
+          <Alert
+            description="在导入过程中，系统可能会弹出输入密码的对话框，请您放心输入系统管理员密码以完成证书导入操作。"
+            type="info"
+            style={{ marginBottom: 20 }}
+          />
+        )}
+
+
+        {selectedFilePaths.length > 1 && (
+          <Alert
+            description="您选择了多个证书文件进行导入，系统可能会为每个证书文件分别弹出输入密码的对话框，请您耐心输入。"
+            type="warning"
+            style={{ marginBottom: 20 }}
+          />
+        )}
         <Form.Item
           label="选择证书文件"
           name="filePaths"
