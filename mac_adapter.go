@@ -35,7 +35,7 @@ func (m *MacCertificateImporter) Import(params ImportParams) ImportResult {
 
 	// 使用osascript执行需要管理员权限的证书导入操作
 	script := fmt.Sprintf(`
-		do shell script "security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain %s" with administrator privileges
+		do shell script "security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain \"%s\"" with administrator privileges
 	`, params.FilePath)
 
 	cmd := exec.Command("osascript", "-e", script)
