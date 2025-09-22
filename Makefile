@@ -44,35 +44,69 @@ build-linux: linux_amd64 linux_arm64
 .PHONY: mac_amd64
 mac_amd64:
 	@echo "Building macOS AMD64 version with Git Hash: $(GIT_HASH)"
-	GOOS=darwin GOARCH=amd64 $(WAILS) build -platform darwin/amd64 $(LDFLAGS) -o build/$(APP_NAME)-macOS-AMD64
+	GOOS=darwin GOARCH=amd64 $(WAILS) build -platform darwin/amd64 $(LDFLAGS) -o $(APP_NAME)-macOS-AMD64
+	@echo "Moving output to build directory..."
+	@mkdir -p build
+	@if [ -d "build/bin/$(APP_NAME).app" ]; then \
+		mv "build/bin/$(APP_NAME).app" "build/$(APP_NAME)-macOS-AMD64.app"; \
+	elif [ -f "build/bin/$(APP_NAME)" ]; then \
+		mv "build/bin/$(APP_NAME)" "build/$(APP_NAME)-macOS-AMD64"; \
+	fi
 
 .PHONY: mac_arm64
 mac_arm64:
 	@echo "Building macOS ARM64 version with Git Hash: $(GIT_HASH)"
-	GOOS=darwin GOARCH=arm64 $(WAILS) build -platform darwin/arm64 $(LDFLAGS) -o build/$(APP_NAME)-macOS-ARM64
+	GOOS=darwin GOARCH=arm64 $(WAILS) build -platform darwin/arm64 $(LDFLAGS) -o $(APP_NAME)-macOS-ARM64
+	@echo "Moving output to build directory..."
+	@mkdir -p build
+	@if [ -d "build/bin/$(APP_NAME).app" ]; then \
+		mv "build/bin/$(APP_NAME).app" "build/$(APP_NAME)-macOS-ARM64.app"; \
+	elif [ -f "build/bin/$(APP_NAME)" ]; then \
+		mv "build/bin/$(APP_NAME)" "build/$(APP_NAME)-macOS-ARM64"; \
+	fi
 
  
 # 构建 Windows 版本
 .PHONY: windows_amd64
 windows_amd64:
 	@echo "Building Windows AMD64 version with Git Hash: $(GIT_HASH)"
-	GOOS=windows GOARCH=amd64 $(WAILS) build -platform windows/amd64 $(LDFLAGS) -o build/$(APP_NAME)-Windows-AMD64.exe
+	GOOS=windows GOARCH=amd64 $(WAILS) build -platform windows/amd64 $(LDFLAGS) -o $(APP_NAME)-Windows-AMD64.exe
+	@echo "Moving output to build directory..."
+	@mkdir -p build
+	@if [ -f "build/bin/$(APP_NAME).exe" ]; then \
+		mv "build/bin/$(APP_NAME).exe" "build/$(APP_NAME)-Windows-AMD64.exe"; \
+	fi
 
 .PHONY: windows_arm64
 windows_arm64:
 	@echo "Building Windows ARM64 version with Git Hash: $(GIT_HASH)"
-	GOOS=windows GOARCH=arm64 $(WAILS) build -platform windows/arm64 $(LDFLAGS) -o build/$(APP_NAME)-Windows-ARM64.exe
+	GOOS=windows GOARCH=arm64 $(WAILS) build -platform windows/arm64 $(LDFLAGS) -o $(APP_NAME)-Windows-ARM64.exe
+	@echo "Moving output to build directory..."
+	@mkdir -p build
+	@if [ -f "build/bin/$(APP_NAME).exe" ]; then \
+		mv "build/bin/$(APP_NAME).exe" "build/$(APP_NAME)-Windows-ARM64.exe"; \
+	fi
 
 # 构建 Linux 版本
 .PHONY: linux_amd64
 linux_amd64:
 	@echo "Building Linux AMD64 version with Git Hash: $(GIT_HASH)"
-	GOOS=linux GOARCH=amd64 $(WAILS) build -platform linux/amd64 $(LDFLAGS) -o build/$(APP_NAME)-Linux-AMD64
+	GOOS=linux GOARCH=amd64 $(WAILS) build -platform linux/amd64 $(LDFLAGS) -o $(APP_NAME)-Linux-AMD64
+	@echo "Moving output to build directory..."
+	@mkdir -p build
+	@if [ -f "build/bin/$(APP_NAME)" ]; then \
+		mv "build/bin/$(APP_NAME)" "build/$(APP_NAME)-Linux-AMD64"; \
+	fi
 
 .PHONY: linux_arm64
 linux_arm64:
 	@echo "Building Linux ARM64 version with Git Hash: $(GIT_HASH)"
-	GOOS=linux GOARCH=arm64 $(WAILS) build -platform linux/arm64 $(LDFLAGS) -o build/$(APP_NAME)-Linux-ARM64
+	GOOS=linux GOARCH=arm64 $(WAILS) build -platform linux/arm64 $(LDFLAGS) -o $(APP_NAME)-Linux-ARM64
+	@echo "Moving output to build directory..."
+	@mkdir -p build
+	@if [ -f "build/bin/$(APP_NAME)" ]; then \
+		mv "build/bin/$(APP_NAME)" "build/$(APP_NAME)-Linux-ARM64"; \
+	fi
 
 # 打包目标：打包所有平台和架构的应用
 .PHONY: package
