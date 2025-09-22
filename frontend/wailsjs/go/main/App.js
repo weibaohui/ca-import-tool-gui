@@ -18,8 +18,8 @@ export function ListCertificates() {
   return window['go']['main']['App']['ListCertificates']();
 }
 
-export function SelectCertificateFile() {
-  return window['go']['main']['App']['SelectCertificateFile']();
+export function SelectCertificateFiles() {
+  return window['go']['main']['App']['SelectCertificateFiles']();
 }
 
 export function ValidateCertificate(arg1) {

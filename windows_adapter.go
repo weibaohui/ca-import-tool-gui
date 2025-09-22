@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
@@ -23,41 +24,58 @@ func (w *WindowsCertificateImporter) Import(params ImportParams) ImportResult {
 	}
 
 	// 验证文件是否存在
-	if _, err := os.Stat(params.FilePath); os.IsNotExist(err) {
-		result.Message = "证书文件不存在"
-		result.Log = fmt.Sprintf("文件路径: %s", params.FilePath)
-		return result
+	for _, filePath := range params.FilePaths {
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			result.Message = "证书文件不存在"
+			result.Log = fmt.Sprintf("文件路径: %s", filePath)
+			return result
+		}
 	}
 
 	// 验证证书
-	valid, err := w.Validate(params.FilePath)
-	if !valid {
-		result.Message = "证书验证失败"
-		result.Log = fmt.Sprintf("错误: %v", err)
-		return result
+	for _, filePath := range params.FilePaths {
+		valid, err := w.Validate(filePath)
+		if !valid {
+			result.Message = "证书验证失败"
+			result.Log = fmt.Sprintf("错误: %v", err)
+			return result
+		}
 	}
 
-	// 在Windows上使用certutil命令导入证书
-	// certutil -addstore -f "ROOT" certificate.cer
-	cmd := exec.Command("certutil", "-addstore", "-f", "ROOT", params.FilePath)
+	// 导入所有证书文件
+	var successCount int
+	var logMessages []string
 
-	output, err := cmd.CombinedOutput()
-	// 处理Windows系统的编码问题
-	decodedOutput, decodeErr := decodeWindowsOutput(output)
-	if decodeErr != nil {
-		decodedOutput = string(output) // 如果解码失败，使用原始输出
-	}
+	for _, filePath := range params.FilePaths {
+		// 在Windows上使用certutil命令导入证书
+		// certutil -addstore -f "ROOT" certificate.cer
+		cmd := exec.Command("certutil", "-addstore", "-f", "ROOT", filePath)
 
-	if err != nil {
-		result.Success = false
-		result.Message = "证书导入失败"
-		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, decodedOutput)
-		return result
+		output, err := cmd.CombinedOutput()
+		// 处理Windows系统的编码问题
+		decodedOutput, decodeErr := decodeWindowsOutput(output)
+		if decodeErr != nil {
+			decodedOutput = string(output) // 如果解码失败，使用原始输出
+		}
+
+		if err != nil {
+			result.Success = false
+			result.Message = fmt.Sprintf("证书 %s 导入失败", filePath)
+			result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, decodedOutput)
+			return result
+		}
+
+		successCount++
+		logMessages = append(logMessages, fmt.Sprintf("证书 %s 已成功导入到系统证书存储中，输出: %s", filePath, decodedOutput))
 	}
 
 	result.Success = true
-	result.Message = "证书导入成功"
-	result.Log = fmt.Sprintf("证书已成功导入到系统证书存储中，输出: %s", decodedOutput)
+	if successCount == len(params.FilePaths) {
+		result.Message = fmt.Sprintf("成功导入 %d 个证书", successCount)
+	} else {
+		result.Message = fmt.Sprintf("成功导入 %d/%d 个证书", successCount, len(params.FilePaths))
+	}
+	result.Log = strings.Join(logMessages, "\n")
 	return result
 }
 

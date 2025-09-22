@@ -19,48 +19,64 @@ func (m *MacCertificateImporter) Import(params ImportParams) ImportResult {
 	}
 
 	// 验证文件是否存在
-	if _, err := os.Stat(params.FilePath); os.IsNotExist(err) {
-		result.Message = "证书文件不存在"
-		result.Log = fmt.Sprintf("文件路径: %s", params.FilePath)
-		return result
+	for _, filePath := range params.FilePaths {
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			result.Message = "证书文件不存在"
+			result.Log = fmt.Sprintf("文件路径: %s", filePath)
+			return result
+		}
 	}
 
 	// 验证证书
-	valid, err := m.Validate(params.FilePath)
-	if !valid {
-		result.Message = "证书验证失败"
-		result.Log = fmt.Sprintf("错误: %v", err)
-		return result
+	for _, filePath := range params.FilePaths {
+		valid, err := m.Validate(filePath)
+		if !valid {
+			result.Message = "证书验证失败"
+			result.Log = fmt.Sprintf("错误: %v", err)
+			return result
+		}
 	}
 
-	// 使用osascript执行需要管理员权限的证书导入操作
-	script := fmt.Sprintf(`
-		do shell script "security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain \"%s\"" with administrator privileges
-	`, params.FilePath)
+	// 导入所有证书文件
+	var successCount int
+	var logMessages []string
 
-	cmd := exec.Command("osascript", "-e", script)
+	for _, filePath := range params.FilePaths {
+		// 使用osascript执行需要管理员权限的证书导入操作
+		script := fmt.Sprintf(`
+			do shell script "security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain \"%s\"" with administrator privileges
+		`, filePath)
 
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// 检查是否是因为用户取消了授权对话框导致的错误
-		// 如果是这种情况，我们认为证书导入是成功的
-		errorMsg := string(output)
-		if strings.Contains(errorMsg, "The authorization was denied since no user interaction was possible") {
-			result.Success = true
-			result.Message = "证书导入成功"
-			result.Log = "证书已成功导入到系统钥匙串中"
+		cmd := exec.Command("osascript", "-e", script)
+
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			// 检查是否是因为用户取消了授权对话框导致的错误
+			// 如果是这种情况，我们认为证书导入是成功的
+			errorMsg := string(output)
+			if strings.Contains(errorMsg, "The authorization was denied since no user interaction was possible") {
+				successCount++
+				logMessages = append(logMessages, fmt.Sprintf("证书 %s 导入成功", filePath))
+				continue
+			}
+
+			result.Success = false
+			result.Message = fmt.Sprintf("证书 %s 导入失败", filePath)
+			result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, errorMsg)
 			return result
 		}
 
-		result.Success = false
-		result.Message = "证书导入失败"
-		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, errorMsg)
-		return result
+		successCount++
+		logMessages = append(logMessages, fmt.Sprintf("证书 %s 已成功导入到系统钥匙串中，输出: %s", filePath, string(output)))
 	}
 
 	result.Success = true
-	result.Message = "证书导入成功"
-	result.Log = fmt.Sprintf("证书已成功导入到系统钥匙串中，输出: %s", string(output))
+	if successCount == len(params.FilePaths) {
+		result.Message = fmt.Sprintf("成功导入 %d 个证书", successCount)
+	} else {
+		result.Message = fmt.Sprintf("成功导入 %d/%d 个证书", successCount, len(params.FilePaths))
+	}
+	result.Log = strings.Join(logMessages, "\n")
 	return result
 }
 

@@ -48,9 +48,9 @@ func (a *App) ImportCertificate(params ImportParams) (ImportResult, error) {
 	return result, nil
 }
 
-// SelectCertificateFile 打开文件选择对话框并返回选中的文件路径
-func (a *App) SelectCertificateFile() (string, error) {
-	selectedFile, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{
+// SelectCertificateFiles 打开文件选择对话框并返回选中的文件路径列表
+func (a *App) SelectCertificateFiles() ([]string, error) {
+	selectedFiles, err := wailsruntime.OpenMultipleFilesDialog(a.ctx, wailsruntime.OpenDialogOptions{
 		Title: "选择证书文件",
 		Filters: []wailsruntime.FileFilter{
 			{
@@ -61,10 +61,10 @@ func (a *App) SelectCertificateFile() (string, error) {
 	})
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return selectedFile, nil
+	return selectedFiles, nil
 }
 
 // ValidateCertificate 验证证书文件

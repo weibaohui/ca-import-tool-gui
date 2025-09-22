@@ -9,7 +9,7 @@ type ImportResult struct {
 
 // ImportParams 导入参数
 type ImportParams struct {
-	FilePath string `json:"file_path"`
+	FilePaths []string `json:"file_paths"`
 }
 
 // CertificateInfo 证书信息

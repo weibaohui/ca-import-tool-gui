@@ -19,26 +19,30 @@ func (l *LinuxCertificateImporter) Import(params ImportParams) ImportResult {
 	}
 
 	// 验证文件是否存在
-	if _, err := os.Stat(params.FilePath); os.IsNotExist(err) {
-		result.Message = "证书文件不存在"
-		result.Log = fmt.Sprintf("文件路径: %s", params.FilePath)
-		return result
+	for _, filePath := range params.FilePaths {
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			result.Message = "证书文件不存在"
+			result.Log = fmt.Sprintf("文件路径: %s", filePath)
+			return result
+		}
 	}
 
 	// 验证证书
-	valid, err := l.Validate(params.FilePath)
-	if !valid {
-		result.Message = "证书验证失败"
-		result.Log = fmt.Sprintf("错误: %v", err)
-		return result
+	for _, filePath := range params.FilePaths {
+		valid, err := l.Validate(filePath)
+		if !valid {
+			result.Message = "证书验证失败"
+			result.Log = fmt.Sprintf("错误: %v", err)
+			return result
+		}
 	}
 
 	// 检测Linux发行版并执行相应的证书导入操作
-	return l.importCertificateByDistribution(params)
+	return l.importCertificatesByDistribution(params)
 }
 
-// importCertificateByDistribution 根据Linux发行版执行相应的证书导入操作
-func (l *LinuxCertificateImporter) importCertificateByDistribution(params ImportParams) ImportResult {
+// importCertificatesByDistribution 根据Linux发行版执行相应的证书导入操作
+func (l *LinuxCertificateImporter) importCertificatesByDistribution(params ImportParams) ImportResult {
 	result := ImportResult{
 		Success: false,
 		Message: "",
@@ -81,20 +85,29 @@ func (l *LinuxCertificateImporter) importWithUpdateCaCertificates(params ImportP
 		Log:     "",
 	}
 
-	// 获取证书文件名
-	fileName := params.FilePath[strings.LastIndex(params.FilePath, "/")+1:]
+	var successCount int
+	var logMessages []string
 
-	// 复制证书到系统目录
-	cmd := exec.Command("sudo", "cp", params.FilePath, "/usr/local/share/ca-certificates/"+fileName)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		result.Success = false
-		result.Message = "证书复制失败"
-		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, string(output))
-		return result
+	// 复制所有证书文件到系统目录
+	for _, filePath := range params.FilePaths {
+		// 获取证书文件名
+		fileName := filePath[strings.LastIndex(filePath, "/")+1:]
+
+		// 复制证书到系统目录
+		cmd := exec.Command("sudo", "cp", filePath, "/usr/local/share/ca-certificates/"+fileName)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			result.Success = false
+			result.Message = fmt.Sprintf("证书 %s 复制失败", filePath)
+			result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, string(output))
+			return result
+		}
+
+		successCount++
+		logMessages = append(logMessages, fmt.Sprintf("证书 %s 已复制到系统目录", filePath))
 	}
 
-	// 更新证书库
+	// 更新证书库（只需要执行一次）
 	updateCmd := exec.Command("sudo", "update-ca-certificates")
 	updateOutput, updateErr := updateCmd.CombinedOutput()
 	if updateErr != nil {
@@ -105,8 +118,8 @@ func (l *LinuxCertificateImporter) importWithUpdateCaCertificates(params ImportP
 	}
 
 	result.Success = true
-	result.Message = "证书导入成功"
-	result.Log = fmt.Sprintf("证书已成功导入并更新证书库，输出: %s", string(updateOutput))
+	result.Message = fmt.Sprintf("成功导入 %d 个证书", successCount)
+	result.Log = strings.Join(logMessages, "\n") + fmt.Sprintf("\n证书库已成功更新，输出: %s", string(updateOutput))
 	return result
 }
 
@@ -118,28 +131,37 @@ func (l *LinuxCertificateImporter) importWithUpdateCaTrust(params ImportParams) 
 		Log:     "",
 	}
 
-	// 获取证书文件名
-	fileName := params.FilePath[strings.LastIndex(params.FilePath, "/")+1:]
+	var successCount int
+	var logMessages []string
 
-	// 复制证书到系统目录 (不同发行版路径可能不同，这里使用最常见的)
-	// 对于RHEL/CentOS/Fedora/Rocky/AlmaLinux
-	cmd := exec.Command("sudo", "cp", params.FilePath, "/etc/pki/ca-trust/source/anchors/"+fileName)
-	output, err := cmd.CombinedOutput()
+	// 复制所有证书文件到系统目录
+	for _, filePath := range params.FilePaths {
+		// 获取证书文件名
+		fileName := filePath[strings.LastIndex(filePath, "/")+1:]
 
-	// 如果上述路径不存在，尝试Arch Linux的路径
-	if err != nil {
-		cmd = exec.Command("sudo", "cp", params.FilePath, "/etc/ca-certificates/trust-source/anchors/"+fileName)
-		output, err = cmd.CombinedOutput()
+		// 复制证书到系统目录 (不同发行版路径可能不同，这里使用最常见的)
+		// 对于RHEL/CentOS/Fedora/Rocky/AlmaLinux
+		cmd := exec.Command("sudo", "cp", filePath, "/etc/pki/ca-trust/source/anchors/"+fileName)
+		output, err := cmd.CombinedOutput()
+
+		// 如果上述路径不存在，尝试Arch Linux的路径
+		if err != nil {
+			cmd = exec.Command("sudo", "cp", filePath, "/etc/ca-certificates/trust-source/anchors/"+fileName)
+			output, err = cmd.CombinedOutput()
+		}
+
+		if err != nil {
+			result.Success = false
+			result.Message = fmt.Sprintf("证书 %s 复制失败", filePath)
+			result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, string(output))
+			return result
+		}
+
+		successCount++
+		logMessages = append(logMessages, fmt.Sprintf("证书 %s 已复制到系统目录", filePath))
 	}
 
-	if err != nil {
-		result.Success = false
-		result.Message = "证书复制失败"
-		result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, string(output))
-		return result
-	}
-
-	// 更新证书库
+	// 更新证书库（只需要执行一次）
 	updateCmd := exec.Command("sudo", "update-ca-trust")
 	updateOutput, updateErr := updateCmd.CombinedOutput()
 	if updateErr != nil {
@@ -150,8 +172,8 @@ func (l *LinuxCertificateImporter) importWithUpdateCaTrust(params ImportParams) 
 	}
 
 	result.Success = true
-	result.Message = "证书导入成功"
-	result.Log = fmt.Sprintf("证书已成功导入并更新证书库，输出: %s", string(updateOutput))
+	result.Message = fmt.Sprintf("成功导入 %d 个证书", successCount)
+	result.Log = strings.Join(logMessages, "\n") + fmt.Sprintf("\n证书库已成功更新，输出: %s", string(updateOutput))
 	return result
 }
 

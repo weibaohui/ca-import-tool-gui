@@ -8,10 +8,10 @@ import (
 type CertificateImporter interface {
 	// Import 执行证书导入操作
 	Import(params ImportParams) ImportResult
-	
+
 	// Validate 验证证书文件
 	Validate(filePath string) (bool, error)
-	
+
 	// List 列出已导入的证书
 	List() []CertificateInfo
 }

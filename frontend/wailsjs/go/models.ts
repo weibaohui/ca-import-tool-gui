@@ -21,7 +21,7 @@ export namespace main {
 	    }
 	}
 	export class ImportParams {
-	    file_path: string;
+	    file_paths: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ImportParams(source);
@@ -29,7 +29,7 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.file_path = source["file_path"];
+	        this.file_paths = source["file_paths"];
 	    }
 	}
 	export class ImportResult {

@@ -10,6 +10,6 @@ export function ImportCertificate(arg1:main.ImportParams):Promise<main.ImportRes
 
 export function ListCertificates():Promise<Array<main.CertificateInfo>>;
 
-export function SelectCertificateFile():Promise<string>;
+export function SelectCertificateFiles():Promise<Array<string>>;
 
 export function ValidateCertificate(arg1:string):Promise<boolean>;

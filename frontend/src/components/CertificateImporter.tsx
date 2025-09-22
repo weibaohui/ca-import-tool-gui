@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Button, Form, Card, Alert, Progress, Space, Typography } from "antd";
+import { Button, Form, Card, Alert, Progress, Space, Typography, List } from "antd";
 import { ImportOutlined, ClearOutlined } from "@ant-design/icons";
-import { ImportCertificate, SelectCertificateFile } from "../../wailsjs/go/main/App";
+import { ImportCertificate, SelectCertificateFiles } from "../../wailsjs/go/main/App";
 import { main } from "../../wailsjs/go/models";
 
 const { Text } = Typography;
@@ -14,14 +14,14 @@ const CertificateImporter: React.FC<CertificateImporterProps> = ({ onImportCompl
   const [form] = Form.useForm();
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
+  const [selectedFilePaths, setSelectedFilePaths] = useState<string[]>([]);
 
   const handleFileSelect = async () => {
     try {
-      const selectedPath = await SelectCertificateFile();
-      if (selectedPath) {
-        setSelectedFilePath(selectedPath);
-        form.setFieldsValue({ filePath: selectedPath });
+      const selectedPaths = await SelectCertificateFiles();
+      if (selectedPaths && selectedPaths.length > 0) {
+        setSelectedFilePaths(selectedPaths);
+        form.setFieldsValue({ filePaths: selectedPaths });
       }
     } catch (error: any) {
       console.error("文件选择失败:", error);
@@ -29,7 +29,7 @@ const CertificateImporter: React.FC<CertificateImporterProps> = ({ onImportCompl
   };
 
   const handleImport = async (values: any) => {
-    if (!values.filePath) {
+    if (!values.filePaths || values.filePaths.length === 0) {
       onImportComplete({
         success: false,
         message: "请先选择证书文件",
@@ -46,7 +46,7 @@ const CertificateImporter: React.FC<CertificateImporterProps> = ({ onImportCompl
       setProgress(30);
 
       const params: main.ImportParams = {
-        file_path: values.filePath
+        file_paths: values.filePaths
       };
 
       const result = await ImportCertificate(params);
@@ -71,7 +71,7 @@ const CertificateImporter: React.FC<CertificateImporterProps> = ({ onImportCompl
   const handleReset = () => {
     form.resetFields();
     setProgress(0);
-    setSelectedFilePath(null);
+    setSelectedFilePaths([]);
   };
 
   return (
@@ -91,14 +91,21 @@ const CertificateImporter: React.FC<CertificateImporterProps> = ({ onImportCompl
         />
         <Form.Item
           label="选择证书文件"
-          name="filePath"
+          name="filePaths"
           rules={[{ required: true, message: '请选择证书文件!' }]}
         >
           <div>
             <Button onClick={handleFileSelect}>选择证书文件</Button>
-            {selectedFilePath && (
+            {selectedFilePaths.length > 0 && (
               <div style={{ marginTop: 8 }}>
-                <strong>已选择:</strong> {selectedFilePath}
+                <strong>已选择 {selectedFilePaths.length} 个文件:</strong>
+                <List
+                  size="small"
+                  bordered
+                  dataSource={selectedFilePaths}
+                  renderItem={item => <List.Item>{item}</List.Item>}
+                  style={{ maxHeight: 200, overflow: 'auto', marginTop: 8 }}
+                />
               </div>
             )}
           </div>
