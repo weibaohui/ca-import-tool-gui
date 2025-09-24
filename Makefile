@@ -47,10 +47,16 @@ mac_amd64:
 	GOOS=darwin GOARCH=amd64 $(WAILS) build -platform darwin/amd64 $(LDFLAGS) -o $(APP_NAME)-macOS-AMD64
 	@echo "Moving output to build directory..."
 	@mkdir -p build
+	@rm -rf "build/$(APP_NAME)-macOS-AMD64.app"
 	@if [ -d "build/bin/$(APP_NAME).app" ]; then \
 		mv "build/bin/$(APP_NAME).app" "build/$(APP_NAME)-macOS-AMD64.app"; \
 	elif [ -f "build/bin/$(APP_NAME)" ]; then \
 		mv "build/bin/$(APP_NAME)" "build/$(APP_NAME)-macOS-AMD64"; \
+	fi
+	# macOS AMD64 应用签名
+	@if [ -d "build/$(APP_NAME)-macOS-AMD64.app" ]; then \
+		echo "Signing macOS AMD64 app..."; \
+		codesign --force --deep -s - "build/$(APP_NAME)-macOS-AMD64.app"; \
 	fi
 
 .PHONY: mac_arm64
@@ -59,13 +65,18 @@ mac_arm64:
 	GOOS=darwin GOARCH=arm64 $(WAILS) build -platform darwin/arm64 $(LDFLAGS) -o $(APP_NAME)-macOS-ARM64
 	@echo "Moving output to build directory..."
 	@mkdir -p build
+	@rm -rf "build/$(APP_NAME)-macOS-ARM64.app"
 	@if [ -d "build/bin/$(APP_NAME).app" ]; then \
 		mv "build/bin/$(APP_NAME).app" "build/$(APP_NAME)-macOS-ARM64.app"; \
 	elif [ -f "build/bin/$(APP_NAME)" ]; then \
 		mv "build/bin/$(APP_NAME)" "build/$(APP_NAME)-macOS-ARM64"; \
 	fi
+	# macOS ARM64 应用签名
+	@if [ -d "build/$(APP_NAME)-macOS-ARM64.app" ]; then \
+		echo "Signing macOS ARM64 app..."; \
+		codesign --force --deep -s - "build/$(APP_NAME)-macOS-ARM64.app"; \
+	fi
 
- 
 # 构建 Windows 版本
 .PHONY: windows_amd64
 windows_amd64:
