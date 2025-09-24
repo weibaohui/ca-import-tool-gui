@@ -131,8 +131,8 @@ package-linux: build-linux package_linux
 .PHONY: package_mac
 package_mac: mac_amd64 mac_arm64 
 	@echo "Packaging macOS versions..."
-	hdiutil create -volname "$(APP_NAME) AMD64" -srcfolder build/$(APP_NAME)-macOS-AMD64 -ov -format UDZO $(PKG_OUTPUT)-macOS-AMD64.dmg
-	hdiutil create -volname "$(APP_NAME) ARM64" -srcfolder build/$(APP_NAME)-macOS-ARM64 -ov -format UDZO $(PKG_OUTPUT)-macOS-ARM64.dmg
+	hdiutil create -volname "$(APP_NAME) AMD64" -srcfolder build/$(APP_NAME)-macOS-AMD64.app -ov -format UDZO  build/$(APP_NAME)-macOS-AMD64.dmg
+	hdiutil create -volname "$(APP_NAME) ARM64" -srcfolder build/$(APP_NAME)-macOS-ARM64.app -ov -format UDZO  build/$(APP_NAME)-macOS-ARM64.dmg
 
 # Windows 打包
 .PHONY: package_windows
