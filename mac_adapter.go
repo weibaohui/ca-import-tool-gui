@@ -60,6 +60,14 @@ func (m *MacCertificateImporter) Import(params ImportParams) ImportResult {
 				continue
 			}
 
+			// 检查是否是TCC限制目录导致的错误
+			if strings.Contains(errorMsg, "Error reading file") && (strings.Contains(errorMsg, "Desktop") || strings.Contains(errorMsg, "Documents") || strings.Contains(errorMsg, "Downloads")) {
+				result.Success = false
+				result.Message = fmt.Sprintf("证书 %s 导入失败", filePath)
+				result.Log = fmt.Sprintf("执行错误: %v, 输出: %s\n\n提示：检测到您可能将证书文件放在了受系统保护的目录（如桌面、文档、下载等）中。请将证书文件移动到用户目录下（如 ~/certs/）或其他非受限目录后再尝试导入。", err, errorMsg)
+				return result
+			}
+
 			result.Success = false
 			result.Message = fmt.Sprintf("证书 %s 导入失败", filePath)
 			result.Log = fmt.Sprintf("执行错误: %v, 输出: %s", err, errorMsg)
