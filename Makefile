@@ -57,6 +57,7 @@ mac_amd64:
 	@if [ -d "build/$(APP_NAME)-macOS-AMD64.app" ]; then \
 		echo "Signing macOS AMD64 app..."; \
 		codesign --force --deep -s - "build/$(APP_NAME)-macOS-AMD64.app"; \
+		codesign --force --deep -s - "build/$(APP_NAME)-macOS-AMD64.app"; \
 	fi
 
 .PHONY: mac_arm64
